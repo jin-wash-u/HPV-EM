@@ -5,28 +5,8 @@ import sys
 import glob
 from whichcraft import which
 
-
-args = ''' 
-arguments needed:
-- sample name(s) X
-- number of CPUS X
-- reference FA X
-
-
-- GDCF name NO
-- location of genome directory? NOT as argument
-- top directory? NOT as argument
-
-command layout:
-
-python tool.py Sample.1.fq Sample.2.fq ref.fa [numCPUS]
-
-
-'''
-
 # left to do:
 # check errors in cmd function
-# properly redirect stdout
 
 # change language for help descriptions
 # clean up variable names
@@ -60,7 +40,6 @@ def cmd(args, write=False, filepath=None):
         sys.stdout = temp
 
     else:
-    	#subp.check_call(args)
         try:
             subp.check_call(args)
         except subp.CalledProcessError, e:
@@ -96,37 +75,33 @@ def main():
             
 
     cmd(["mkdir", nameOnly])
-    
-    # don't really need, just modify paths
-    # cmd(["cd", args.sampleName])
-    # with cd(args.sampleName): # to change directories
-            
-         
-    # # generates 2 fastq files (need to add option for just one)
+
+    # generates 2 fastq files (need to add option for just one)
+
     if(args.sampleName.lower().endswith(".bam")):
         cmd(["echo", "Extracting raw reads"]) # if bam file given as input, convert to fastq
         cmd(["samtools", "fastq",
-             "-1{}.1.fq".format(args.sampleName),
-             "-2{}.2.fq".format(args.sampleName),
+             "-1{}.1.fq".format(nameOnly),
+             "-2{}.2.fq".format(nameOnly),
              "-0{}".format(os.devnull), 
              "-n", "-F 0x900", "-@ {}".format(args.cpus-1),
              "{}".format(args.sampleName)])
 
     cmd(["echo", "Aligning reads to human genome"])
 
-    ##generates Aligned.out.bam, Chimeric.out.junction, Log.final.out, Log.out
-    ##Log.progress.out, SJ.out.tabl, Unmapped.out.mate1, Unmapped.out.mate2
+    ## generates Aligned.out.bam, Chimeric.out.junction, Log.final.out, Log.out
+    ## Log.progress.out, SJ.out.tabl, Unmapped.out.mate1, Unmapped.out.mate2
 
     cmd(
         ["STAR", 
         "--genomeDir {path}".format(args.path),
-        "--readFilesIn {sampleName}.1.fq {sampleName}.2.fq".format(sampleName=args.sampleName),
+        "--readFilesIn {sampleName}.1.fq {sampleName}.2.fq".format(sampleName=nameOnly),
         "--runThreadN {}".format(args.cpus),
         "--chimSegmentMin 18",
         "--outSAMtype BAM Unsorted",
         "--outReadsUnmapped Fastx",
         "--outFilterMultimapNmax 100",
-        "--outFileNamePrefix ./{}.".format(args.sampleName)])
+        "--outFileNamePrefix ./{}.".format(nameOnly)])
 
     for format in {'*.out','*.junction','*.tab','*.Aligned.*'}:
         for file in glob.glob(format):
@@ -135,8 +110,8 @@ def main():
 
     cmd(
         ["rm", 
-        "{}.1.fq".format(args.sampleName), 
-        "{}.2.fq".format(args.sampleName)])
+        "{}.1.fq".format(nameOnly), 
+        "{}.2.fq".format(nameOnly)])
 
     cmd(["echo", "Aligning reads to HPV genomes"])
 
@@ -146,24 +121,24 @@ def main():
             "aln", 
             "-t {}".format(args.cpus),
             "{}".format(args.reference),
-            "{sampleName}.Unmapped.out.mate{i}".format(sampleName=args.sampleName, i=i)], 
-            True, "{sampleName}.{i}.sai".format(sampleName=args.sampleName, i=i))
+            "{sampleName}.Unmapped.out.mate{i}".format(sampleName=nameOnly, i=i)], 
+            True, "{sampleName}.{i}.sai".format(sampleName=nameOnly, i=i))
 
         cmd(
             ["bwa", 
             "samse", 
             "{}".format(args.reference), 
-            "{sampleName}.{i}.sai".format(sampleName=args.sampleName, i=i),
-            "{sampleName}.Unmapped.out.mate{i}".format(sampleName=args.sampleName, i=i)],
-            True,"{sampleName}.{i}.aln-se.sam".format(sampleName=args.sampleName,i=i))
+            "{sampleName}.{i}.sai".format(sampleName=nameOnly, i=i),
+            "{sampleName}.Unmapped.out.mate{i}".format(sampleName=nameOnly, i=i)],
+            True,"{sampleName}.{i}.aln-se.sam".format(sampleName=nameOnly,i=i))
 
         cmd(
             ["samtools",
             "view",
             "-F4"
             "-@ {}".format((args.cpus - 1)),
-            "{sampleName}.{i}.aln-se.sam".format(sampleName=args.sampleName, i=i)], 
-            True,"{topdir}/{name}/HPV.aligned.{i}.sam".format(topdir=topdirectory, name=nameOnly, i=i))
+            "{sampleName}.{i}.aln-se.sam".format(sampleName=nameOnly, i=i)], 
+            True,"{topdir}/{sampleName}/HPV.aligned.{i}.sam".format(topdir=topdirectory, sampleName=nameOnly, i=i))
 
         for format in {'*.sam','*.sai'}:
             for file in glob.glob(format):
