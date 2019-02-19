@@ -119,7 +119,7 @@ def main():
 
     cmd(
         ["STAR", 
-        "--genomeDir HumanGenome",#/gscmnt/gc6127/research/m.inkman/genome_ref/GRCh38_r90/genomeDir",
+        "--genomeDir {path}".format(args.path),
         "--readFilesIn {sampleName}.1.fq {sampleName}.2.fq".format(sampleName=args.sampleName),
         "--runThreadN {}".format(args.cpus),
         "--chimSegmentMin 18",
