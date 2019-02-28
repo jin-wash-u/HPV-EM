@@ -31,7 +31,7 @@ def cmd(args, write=False, filepath=None):
         try:
             subp.check_call(args, stdout=sys.stdout)
         except subp.CalledProcessError, e:
-            print("Subprocesss error with code: " + e.returncode)
+            print("Subprocesss error with code: " +  str(e.returncode))
             return;
         except:
             print("An unknown error occurred")
@@ -43,13 +43,41 @@ def cmd(args, write=False, filepath=None):
         try:
             subp.check_call(args)
         except subp.CalledProcessError, e:
-            print("Subprocesss error with code: " + e.returncode)
+            print("Subprocesss error with code: " + str(e.returncode))
             return;
         except:
             print("An unknown error occurred")
 
-
     return
+
+def aligntoGenome(nameOnly, i, args, topdirectory):
+    cmd(
+        ["bwa", 
+        "aln", 
+        "-t {}".format(args.cpus),
+        "{}".format(args.reference),
+        "{sampleName}.Unmapped.out.mate{i}".format(sampleName=nameOnly, i=i)], 
+        True, "{sampleName}.{i}.sai".format(sampleName=nameOnly, i=i))
+
+    cmd(
+        ["bwa", 
+        "samse", 
+        "{}".format(args.reference), 
+        "{sampleName}.{i}.sai".format(sampleName=nameOnly, i=i),
+        "{sampleName}.Unmapped.out.mate{i}".format(sampleName=nameOnly, i=i)],
+        True,"{sampleName}.{i}.aln-se.sam".format(sampleName=nameOnly,i=i))
+
+    cmd(
+        ["samtools",
+        "view",
+        "-F4"
+        "-@ {}".format((args.cpus - 1)),
+        "{sampleName}.{i}.aln-se.sam".format(sampleName=nameOnly, i=i)], 
+        True,"{topdir}/{sampleName}/HPV.aligned.{i}.sam".format(topdir=topdirectory, sampleName=nameOnly, i=i))
+
+    for format in {'*.sam','*.sai'}:
+        for file in glob.glob(format):
+            os.remove(file)
 
 def main(): 
 
@@ -57,8 +85,8 @@ def main():
     myparse.add_argument('sampleName', metavar="sampleName", help="name of the sample(s) to be aligned")
     myparse.add_argument('reference', metavar="refFasta", help="the reference .fa file for the program")
     myparse.add_argument('path', metavar="path", help="path to the Human Genome")
-    myparse.add_argument('-cpus', type=int, default=2, help="number of CPUS for processing")
-    myparse.add_argument('-twosamps', type=bool, default=False, help="number of sample fq files")
+    myparse.add_argument('-cpus', type=int, default=1, help="number of CPUS for processing")
+    myparse.add_argument('-2', metavar="sampleName2", default="not supplied", help="number of sample fq files")
 
     args = myparse.parse_args()
 
@@ -67,12 +95,6 @@ def main():
     topdirectory = os.getcwd()
 
     nameOnly = args.sampleName.split(".")[0]
-
-    if(args.twosamps == True):
-        numSamples = 2
-    else:
-        numSamples = 1
-            
 
     cmd(["mkdir", nameOnly])
 
@@ -94,7 +116,7 @@ def main():
 
     cmd(
         ["STAR", 
-        "--genomeDir {path}".format(args.path),
+        "--genomeDir {path}".format(path=args.path),
         "--readFilesIn {sampleName}.1.fq {sampleName}.2.fq".format(sampleName=nameOnly),
         "--runThreadN {}".format(args.cpus),
         "--chimSegmentMin 18",
@@ -106,8 +128,6 @@ def main():
     for format in {'*.out','*.junction','*.tab','*.Aligned.*'}:
         for file in glob.glob(format):
             os.remove(file)
-
-
     cmd(
         ["rm", 
         "{}.1.fq".format(nameOnly), 
@@ -115,34 +135,10 @@ def main():
 
     cmd(["echo", "Aligning reads to HPV genomes"])
 
-    for i in range(1, numSamples + 1):
-        cmd(
-            ["bwa", 
-            "aln", 
-            "-t {}".format(args.cpus),
-            "{}".format(args.reference),
-            "{sampleName}.Unmapped.out.mate{i}".format(sampleName=nameOnly, i=i)], 
-            True, "{sampleName}.{i}.sai".format(sampleName=nameOnly, i=i))
+    aligntoGenome(nameOnly,1,args,topdirectory)
 
-        cmd(
-            ["bwa", 
-            "samse", 
-            "{}".format(args.reference), 
-            "{sampleName}.{i}.sai".format(sampleName=nameOnly, i=i),
-            "{sampleName}.Unmapped.out.mate{i}".format(sampleName=nameOnly, i=i)],
-            True,"{sampleName}.{i}.aln-se.sam".format(sampleName=nameOnly,i=i))
-
-        cmd(
-            ["samtools",
-            "view",
-            "-F4"
-            "-@ {}".format((args.cpus - 1)),
-            "{sampleName}.{i}.aln-se.sam".format(sampleName=nameOnly, i=i)], 
-            True,"{topdir}/{sampleName}/HPV.aligned.{i}.sam".format(topdir=topdirectory, sampleName=nameOnly, i=i))
-
-        for format in {'*.sam','*.sai'}:
-            for file in glob.glob(format):
-                os.remove(file)
+    if(args.sampleName2 != "not supplied"):
+        aligntoGenome(nameOnly,2,args,topdirectory)
 
 
 if __name__ == '__main__':
