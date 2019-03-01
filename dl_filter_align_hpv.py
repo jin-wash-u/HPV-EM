@@ -5,19 +5,19 @@ import sys
 import glob
 from whichcraft import which
 
-# left to do:
-# check errors in cmd function
 
 # change language for help descriptions
 # clean up variable names
 
 def prereqs():
     programs = ["python", "bwa", "samtools", "STAR"]
+    ready = True;
 
     for i in range(0, len(programs)):
         if which(programs[i]) is None:
             print(programs[i] + " not installed. Please install " + programs[i])
-    return
+            ready = False;
+    return ready
 
 
 
@@ -32,9 +32,10 @@ def cmd(args, write=False, filepath=None):
             subp.check_call(args, stdout=sys.stdout)
         except subp.CalledProcessError, e:
             print("Subprocesss error with code: " +  str(e.returncode))
-            return;
+            exit()
         except:
             print("An unknown error occurred")
+            exit()
 
 
         sys.stdout = temp
@@ -44,11 +45,14 @@ def cmd(args, write=False, filepath=None):
             subp.check_call(args)
         except subp.CalledProcessError, e:
             print("Subprocesss error with code: " + str(e.returncode))
-            return;
+            exit()
         except:
             print("An unknown error occurred")
+            exit()
 
     return
+
+
 
 def aligntoGenome(nameOnly, i, args, topdirectory):
     cmd(
@@ -79,66 +83,100 @@ def aligntoGenome(nameOnly, i, args, topdirectory):
         for file in glob.glob(format):
             os.remove(file)
 
+
+
 def main(): 
 
     myparse = argp.ArgumentParser(description='Runs the tool')
-    myparse.add_argument('sampleName', metavar="sampleName", help="name of the sample(s) to be aligned")
-    myparse.add_argument('reference', metavar="refFasta", help="the reference .fa file for the program")
-    myparse.add_argument('path', metavar="path", help="path to the Human Genome")
-    myparse.add_argument('-cpus', type=int, default=1, help="number of CPUS for processing")
-    myparse.add_argument('-2', metavar="sampleName2", default="not supplied", help="number of sample fq files")
+    myparse.add_argument('sampleName', metavar="sampleName", help="name of the first sample to be aligned")
+    myparse.add_argument('path', metavar="path", help="path to Human Genome (.fa, .fasta) file")
+    myparse.add_argument('-@', dest="cpus", type=int, default=2, help="number of CPUS for processing")
+    myparse.add_argument('-2', dest="otherSample", default="not supplied", help="name of the (optional) second sample to be aligned")
+
 
     args = myparse.parse_args()
 
-    prereqs()
+    if(prereqs() == False):
+        exit()
 
     topdirectory = os.getcwd()
 
-    nameOnly = args.sampleName.split(".")[0]
+    nameOnly = ('.').join(args.sampleName.split('.')[:-1])
 
-    cmd(["mkdir", nameOnly])
+    if (not(os.path.isdir("{sampleName}".format(sampleName=nameOnly)))):
+        cmd(["mkdir", nameOnly])
 
     # generates 2 fastq files (need to add option for just one)
 
-    if(args.sampleName.lower().endswith(".bam")):
-        cmd(["echo", "Extracting raw reads"]) # if bam file given as input, convert to fastq
-        cmd(["samtools", "fastq",
-             "-1{}.1.fq".format(nameOnly),
-             "-2{}.2.fq".format(nameOnly),
-             "-0{}".format(os.devnull), 
-             "-n", "-F 0x900", "-@ {}".format(args.cpus-1),
-             "{}".format(args.sampleName)])
+    if((args.sampleName.lower().endswith(".bam")) or (args.otherSample != "not supplied")):
+        
+        if(args.sampleName.lower().endswith(".bam")):
+            
+            cmd(["echo", "Extracting raw reads"]) # if bam file given as input, convert to fastq
+            cmd(["samtools", "fastq",
+                 "-1{}.1.fq".format(nameOnly),
+                 "-2{}.2.fq".format(nameOnly),
+                 "-0{}".format(os.devnull), 
+                 "-n", "-F 0x900", "-@ {}".format(args.cpus-1),
+                 "{}".format(args.sampleName)])
 
-    cmd(["echo", "Aligning reads to human genome"])
+        
+        cmd(["echo", "Aligning reads to human genome"])
 
-    ## generates Aligned.out.bam, Chimeric.out.junction, Log.final.out, Log.out
-    ## Log.progress.out, SJ.out.tabl, Unmapped.out.mate1, Unmapped.out.mate2
 
-    cmd(
-        ["STAR", 
-        "--genomeDir {path}".format(path=args.path),
-        "--readFilesIn {sampleName}.1.fq {sampleName}.2.fq".format(sampleName=nameOnly),
-        "--runThreadN {}".format(args.cpus),
-        "--chimSegmentMin 18",
-        "--outSAMtype BAM Unsorted",
-        "--outReadsUnmapped Fastx",
-        "--outFilterMultimapNmax 100",
-        "--outFileNamePrefix ./{}.".format(nameOnly)])
+        cmd(
+            ["STAR", 
+            "--genomeDir {path}".format(path=args.path),
+            "--readFilesIn {sampleName}.fq {sampleName}.fq".format(sampleName=nameOnly),
+            "--runThreadN {}".format(args.cpus),
+            "--chimSegmentMin 18",
+            "--outSAMtype BAM Unsorted",
+            "--outReadsUnmapped Fastx",
+            "--outFilterMultimapNmax 100",
+            "--outFileNamePrefix ./{}.".format(nameOnly)])
+
+        if(args.sampleName.lower().endswith(".bam")):
+            cmd(
+            ["rm", 
+            "{}.1.fq".format(nameOnly), 
+            "{}.2.fq".format(nameOnly)])
+
+
+        cmd(["echo", "Aligning reads to HPV genomes"])
+
+        aligntoGenome(nameOnly,1,args,topdirectory)
+        aligntoGenome(nameOnly,2,args,topdirectory)
+
+
+    else:
+        cmd(["echo", "Aligning reads to human genome"])
+
+
+        cmd(
+            ["STAR", 
+            "--genomeDir {path}".format(path=args.path),
+            "--readFilesIn {sampleName}.fq".format(sampleName=nameOnly),
+            "--runThreadN {}".format(args.cpus),
+            "--chimSegmentMin 18",
+            "--outSAMtype BAM Unsorted",
+            "--outReadsUnmapped Fastx",
+            "--outFilterMultimapNmax 100",
+            "--outFileNamePrefix ./{}.".format(nameOnly)])
+
+        cmd(["echo", "Aligning reads to HPV genomes"])
+
+        aligntoGenome(nameOnly,1,args,topdirectory)
+
+
+
+    cmd(["echo", "Required file clean up"])
 
     for format in {'*.out','*.junction','*.tab','*.Aligned.*'}:
         for file in glob.glob(format):
             os.remove(file)
-    cmd(
-        ["rm", 
-        "{}.1.fq".format(nameOnly), 
-        "{}.2.fq".format(nameOnly)])
 
-    cmd(["echo", "Aligning reads to HPV genomes"])
 
-    aligntoGenome(nameOnly,1,args,topdirectory)
 
-    if(args.sampleName2 != "not supplied"):
-        aligntoGenome(nameOnly,2,args,topdirectory)
 
 
 if __name__ == '__main__':
