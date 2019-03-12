@@ -6,9 +6,6 @@ import glob
 from whichcraft import which
 
 
-# change language for help descriptions
-# clean up variable names
-
 def prereqs():
     programs = ["python", "bwa", "samtools", "STAR"]
     ready = True;
@@ -31,7 +28,7 @@ def cmd(args, write=False, filepath=None):
         try:
             subp.check_call(args, stdout=sys.stdout)
         except subp.CalledProcessError, e:
-            print("Subprocesss error with code: " +  str(e.returncode))
+            #print("Subprocesss error with code: " +  str(e.returncode))
             exit()
         except:
             print("An unknown error occurred")
@@ -44,7 +41,7 @@ def cmd(args, write=False, filepath=None):
         try:
             subp.check_call(args)
         except subp.CalledProcessError, e:
-            print("Subprocesss error with code: " + str(e.returncode))
+            #print("Subprocesss error with code: " + str(e.returncode))
             exit()
         except:
             print("An unknown error occurred")
@@ -87,11 +84,12 @@ def aligntoGenome(nameOnly, i, args, topdirectory):
 
 def main(): 
 
-    myparse = argp.ArgumentParser(description='Runs the tool')
+    myparse = argp.ArgumentParser(description='Runs the HPV alignment tool')
     myparse.add_argument('sampleName', metavar="sampleName", help="name of the first sample to be aligned")
+    myparse.add_argument('reference', metavar="refFasta", help="the reference .fa file for the program")
     myparse.add_argument('path', metavar="path", help="path to Human Genome (.fa, .fasta) file")
     myparse.add_argument('-@', dest="cpus", type=int, default=2, help="number of CPUS for processing")
-    myparse.add_argument('-2', dest="otherSample", default="not supplied", help="name of the (optional) second sample to be aligned")
+    myparse.add_argument('-2', dest="otherSample", metavar="otherSample", default="not supplied", help="name of the (optional) second sample to be aligned")
 
 
     args = myparse.parse_args()
@@ -105,14 +103,20 @@ def main():
 
     if (not(os.path.isdir("{sampleName}".format(sampleName=nameOnly)))):
         cmd(["mkdir", nameOnly])
+    else:
+        num = 1
 
-    # generates 2 fastq files (need to add option for just one)
+        while(os.path.isdir("{sampleName}_{number}".format(sampleName=nameOnly, number=num))):
+            num = num + 1
+
+        cmd(["mkdir", "{sampleName}_{number}".format(sampleName=nameOnly, number=num)])
+
 
     if((args.sampleName.lower().endswith(".bam")) or (args.otherSample != "not supplied")):
         
-        if(args.sampleName.lower().endswith(".bam")):
+        if(args.sampleName.lower().endswith(".bam")): # if bam file given as input, convert to fastq files
             
-            cmd(["echo", "Extracting raw reads"]) # if bam file given as input, convert to fastq
+            cmd(["echo", "Extracting raw reads"]) 
             cmd(["samtools", "fastq",
                  "-1{}.1.fq".format(nameOnly),
                  "-2{}.2.fq".format(nameOnly),
@@ -120,6 +124,12 @@ def main():
                  "-n", "-F 0x900", "-@ {}".format(args.cpus-1),
                  "{}".format(args.sampleName)])
 
+            firstSample = nameOnly + ".1"
+            secondSample = nameOnly + ".2"
+
+        else:
+            firstSample = nameOnly
+            secondSample = ('.').join(args.otherSample.split('.')[:-1])
         
         cmd(["echo", "Aligning reads to human genome"])
 
@@ -127,7 +137,7 @@ def main():
         cmd(
             ["STAR", 
             "--genomeDir {path}".format(path=args.path),
-            "--readFilesIn {sampleName}.fq {sampleName}.fq".format(sampleName=nameOnly),
+            "--readFilesIn {firstSample}.fq {secondSample}.fq".format(firstSample=firstSample, secondSample=secondSample),
             "--runThreadN {}".format(args.cpus),
             "--chimSegmentMin 18",
             "--outSAMtype BAM Unsorted",
@@ -171,12 +181,11 @@ def main():
 
     cmd(["echo", "Required file clean up"])
 
-    for format in {'*.out','*.junction','*.tab','*.Aligned.*'}:
+    for format in {'*.out','*.junction','*.tab','*.Aligned.*', '*.mate*'}:
         for file in glob.glob(format):
             os.remove(file)
 
-
-
+    exit()
 
 
 if __name__ == '__main__':
