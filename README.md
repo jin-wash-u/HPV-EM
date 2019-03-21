@@ -13,9 +13,9 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   Download the pipeline at https://github.com/tmattellis/HPV_EM_Pipeline/
   
   To install, run
-  '''
+  ```
   TBD
-  '''
+  ```
   
   TBD
   
