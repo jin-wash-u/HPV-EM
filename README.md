@@ -6,7 +6,7 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   - python
   - bwa
   - STAR
-    - to compile STAR, you may need CMAKE or gcc
+    - to compile STAR, you may need to install CMAKE or gcc
   - samtools
   
 ## Installation
@@ -17,10 +17,20 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   
 ## Input
   Upon running the pipeline with the -h option (or --help), the following options are presented:
-  - (add here)
-  -
   
+  Positional arguments
+  - sampleName : The name of the sample to be aligned. This file can be in either .bam or .fq (fastq) format. If it's in the fastq format, a second fastq file can be aligned using the -2 option explained below.
   
+  - refFasta : The name of the reference fasta file to be used for alignment. For most cases, the reference fasta (.fa) file should be the human genome (which needs to be installed separately from the pipeline).
+  
+  - path : This argument indicates the path to the human genome directory as needed by STAR, which includes files such as genomeParameters.txt and chrName.txt.  
+  
+  Optional Arguments 
+  - -h, -help :
+  
+  - -@ (CPUS) :
+  
+  - -2 (otherSample) :
 
 ## Output
   The output is formatted as 
