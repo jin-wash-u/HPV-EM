@@ -33,6 +33,6 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   - -2 (otherSample) : An optional second fastq file that can be provided to produce paired end reads.
 
 ## Output
-  The output is formatted 
+  The output of the final EM algorithm is formatted as 
 
 ## Examples
