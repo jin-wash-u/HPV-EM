@@ -3,11 +3,11 @@
 The HPV EM Pipeline is an alignment tool that utilizes an expectation maximization algorithm to identify the potential presence of different HPV types in a particular genome. 
 
 ## Prerequisites
-  - python
-  - bwa
-  - STAR
-    - to compile STAR, you may need to install CMAKE(https://cmake.org/) or gcc (https://gcc.gnu.org/)
-  - samtools
+  - [python](https://www.python.org/) (use 2.7)
+  - [bwa](http://bio-bwa.sourceforge.net/)
+  - [STAR](https://github.com/alexdobin/STAR)
+    - to compile STAR, you may need to install [CMAKE](https://cmake.org/) or [gcc](https://gcc.gnu.org/)
+  - [samtools](http://samtools.sourceforge.net/)
   
 ## Installation
   TBD
