@@ -20,7 +20,7 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   TBD
   
 ## Setup
-  To begin, assure that you know the path to your reference fasta file, as well as the human reference genome (as needed). If you plan to use the pipeline on multiple files of the same name, multiple folders will be created (as shown in the Examples section).
+  To begin, assure that you know the path to your reference fasta file, as well as the human reference genome (as needed). If you plan to use the pipeline on multiple files of the same name, multiple folders will be created.
   
 ## Input
   Upon running the pipeline with the -h option (or --help), the following options are presented:
@@ -40,7 +40,7 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   - -2 (otherSample) : An optional second fastq file that can be provided to produce paired end reads.
 
 ## Output
-  The output of the final EM algorithm is printed to standard out, in the format:
+  The output of the final EM algorithm is printed to stdout, in the format:
   
   ```
   HPVtype    NumReads    Prop    Probability
@@ -48,3 +48,5 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   for each HPV type in the included file.
   
 ## Examples
+
+TBD
