@@ -25,14 +25,14 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
 ## Input
   Upon running the pipeline with the -h option (or --help), the following options are presented:
   
-  Positional arguments
+  Positional arguments:
   - sampleName : The name of the sample to be aligned. This file can be in either .bam or .fq (fastq) format. If it's in the fastq format, a second fastq file can be aligned using the -2 option explained below.
   
-  - refFasta : The name of the reference fasta file to be used for alignment. For most cases, the reference fasta (.fa) file should be the human genome (which needs to be installed separately from the pipeline).
+  - refFasta : The name of the reference fasta file to be used for alignment. 
   
   - path : This argument indicates the path to the human genome directory as needed by STAR, which includes files such as genomeParameters.txt and chrName.txt.  
   
-  Optional Arguments 
+  Optional Arguments:
   - -h, -help : Will show the help menu, which contains an example of the function usage and abbreviated explanations of each of the options.
   
   - -@ (CPUS) : The number of CPUs with which to run the pipeline (used as an argument for the calls to bwa and STAR).
@@ -40,6 +40,11 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   - -2 (otherSample) : An optional second fastq file that can be provided to produce paired end reads.
 
 ## Output
-  The output of the final EM algorithm is formatted as 
-
+  The output of the final EM algorithm is printed to standard out, in the format:
+  
+  ```
+  HPVtype    NumReads    Prop    Probability
+  ```
+  for each HPV type in the included file.
+  
 ## Examples
