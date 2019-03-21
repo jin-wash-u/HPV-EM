@@ -87,7 +87,7 @@ def main():
     myparse = argp.ArgumentParser(description='Runs the HPV alignment tool')
     myparse.add_argument('sampleName', metavar="sampleName", help="name of the first sample to be aligned")
     myparse.add_argument('reference', metavar="refFasta", help="the reference .fa file for the program")
-    myparse.add_argument('path', metavar="path", help="path to Human Genome (.fa, .fasta) file")
+    myparse.add_argument('path', metavar="path", help="path to Human Genome directory")
     myparse.add_argument('-@', dest="cpus", type=int, default=2, help="number of CPUS for processing")
     myparse.add_argument('-2', dest="otherSample", metavar="otherSample", default="not supplied", help="name of the (optional) second sample to be aligned")
 
