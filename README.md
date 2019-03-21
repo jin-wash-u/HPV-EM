@@ -6,7 +6,7 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   - python
   - bwa
   - STAR
-    - to compile STAR, you may need to install CMAKE or gcc
+    - to compile STAR, you may need to install CMAKE(https://cmake.org/) or gcc (https://gcc.gnu.org/)
   - samtools
   
 ## Installation
@@ -26,13 +26,13 @@ The HPV EM Pipeline is an alignment tool that utilizes an expectation maximizati
   - path : This argument indicates the path to the human genome directory as needed by STAR, which includes files such as genomeParameters.txt and chrName.txt.  
   
   Optional Arguments 
-  - -h, -help :
+  - -h, -help : Will show the help menu, which contains an example of the function usage and abbreviated explanations of each of the options.
   
-  - -@ (CPUS) :
+  - -@ (CPUS) : The number of CPUs with which to run the pipeline (used as an argument for the calls to bwa and STAR).
   
-  - -2 (otherSample) :
+  - -2 (otherSample) : An optional second fastq file that can be provided to produce paired end reads.
 
 ## Output
-  The output is formatted as 
+  The output is formatted 
 
 ## Examples
