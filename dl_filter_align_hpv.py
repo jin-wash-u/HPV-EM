@@ -55,7 +55,7 @@ def aligntoGenome(nameOnly, i, args, topdirectory):
     cmd(
         ["bwa", 
         "aln", 
-        "-t {}".format(args.cpus),
+        "-t {}".format(args.threads),
         "{}".format(args.reference),
         "{sampleName}.Unmapped.out.mate{i}".format(sampleName=nameOnly, i=i)], 
         True, "{sampleName}.{i}.sai".format(sampleName=nameOnly, i=i))
@@ -72,7 +72,7 @@ def aligntoGenome(nameOnly, i, args, topdirectory):
         ["samtools",
         "view",
         "-F4"
-        "-@ {}".format((args.cpus - 1)),
+        "-@ {}".format((args.threads)),
         "{sampleName}.{i}.aln-se.sam".format(sampleName=nameOnly, i=i)], 
         True,"{topdir}/{sampleName}/HPV.aligned.{i}.sam".format(topdir=topdirectory, sampleName=nameOnly, i=i))
 
@@ -85,21 +85,49 @@ def aligntoGenome(nameOnly, i, args, topdirectory):
 def main(): 
 
     myparse = argp.ArgumentParser(description='Runs the HPV alignment tool')
-    myparse.add_argument('sampleName', metavar="sampleName", help="name of the first sample to be aligned")
-    myparse.add_argument('reference', metavar="refFasta", help="the reference .fa file for the program")
-    myparse.add_argument('path', metavar="path", help="path to Human Genome directory")
-    myparse.add_argument('-@', dest="cpus", type=int, default=2, help="number of CPUS for processing")
-    myparse.add_argument('-2', dest="otherSample", metavar="otherSample", default="not supplied", help="name of the (optional) second sample to be aligned")
+    #myparse.add_argument('sampleName', metavar="sampleName", help="name of the first sample to be aligned")
+    #myparse.add_argument('reference', metavar="refFasta", help="the reference fasta file for the program")
+    #myparse.add_argument('path', metavar="path", help="path to Human Genome file")
+    #myparse.add_argument('-@', dest="cpus", type=int, default=2, help="number of CPUS for processing")
+    #myparse.add_argument('-2', dest="otherSample", metavar="otherSample", default="not supplied", help="name of the (optional) second sample to be aligned")
+
+
+   # HPV-EM.py [-h] [options] -s genomeDir reads1.fq [reads2.fq]
+    #myparse.add_argument()
+    
+    # positional arguments
+    myparse.add_argument("reads1", help="single end FASTQ file or first paired end FASTQ file")
+    myparse.add_argument("reads2", nargs='?', help="(optional) second paired end FASTQ file", default="not supplied")
+
+
+    # other required arguments
+    myparse.add_argument('-s','--stargenome', required=True, type=dir, help="path to a directory containing STAR generated human genome files")
+
+
+    # options
+    myparse.add_argument('-t','--threads', type=int,  help="number of threads to use [1]", default=1)
+    myparse.add_argument('-r','--reference', help="viral reference genome in FASTA format, to be used in place of default HPV reference",default=0)
+    myparse.add_argument('-o', '--outname', type=str, help="output file name prefix [./hpvEM]", default='./hpvEM')
+    myparse.add_argument('-d', '--dust', type=int, help="0 to disable filtering of low-complexity reads", default=1)
+    
 
 
     args = myparse.parse_args()
+
+    # finding path to reference
+    if(args.reference == 0):
+        defaultHpvRef = True
+    else:
+        defaultHpvRef = False
+        path = args.reference
+
 
     if(prereqs() == False):
         exit()
 
     topdirectory = os.getcwd()
 
-    nameOnly = ('.').join(args.sampleName.split('.')[:-1])
+    nameOnly = ('.').join(args.reads1.split('.')[:-1]) # extracting name of file without extension
 
     if (not(os.path.isdir("{sampleName}".format(sampleName=nameOnly)))):
         cmd(["mkdir", nameOnly])
@@ -112,40 +140,40 @@ def main():
         cmd(["mkdir", "{sampleName}_{number}".format(sampleName=nameOnly, number=num)])
 
 
-    if((args.sampleName.lower().endswith(".bam")) or (args.otherSample != "not supplied")):
+    if((args.reads1.lower().endswith(".bam")) or (args.reads2 != "not supplied")):
         
-        if(args.sampleName.lower().endswith(".bam")): # if bam file given as input, convert to fastq files
+        if(args.reads1.lower().endswith(".bam")): # if bam file given as input, convert to fastq files
             
             cmd(["echo", "Extracting raw reads"]) 
             cmd(["samtools", "fastq",
                  "-1{}.1.fq".format(nameOnly),
                  "-2{}.2.fq".format(nameOnly),
                  "-0{}".format(os.devnull), 
-                 "-n", "-F 0x900", "-@ {}".format(args.cpus-1),
-                 "{}".format(args.sampleName)])
+                 "-n", "-F 0x900", "-@ {}".format(args.threads),
+                 "{}".format(args.reads1)])
 
             firstSample = nameOnly + ".1"
             secondSample = nameOnly + ".2"
 
         else:
             firstSample = nameOnly
-            secondSample = ('.').join(args.otherSample.split('.')[:-1])
+            secondSample = ('.').join(args.reads2.split('.')[:-1])
         
         cmd(["echo", "Aligning reads to human genome"])
 
 
         cmd(
             ["STAR", 
-            "--genomeDir {path}".format(path=args.path),
+            "--genomeDir {path}".format(path=args.stargenome),
             "--readFilesIn {firstSample}.fq {secondSample}.fq".format(firstSample=firstSample, secondSample=secondSample),
-            "--runThreadN {}".format(args.cpus),
+            "--runThreadN {}".format(args.threads),
             "--chimSegmentMin 18",
             "--outSAMtype BAM Unsorted",
             "--outReadsUnmapped Fastx",
             "--outFilterMultimapNmax 100",
             "--outFileNamePrefix ./{}.".format(nameOnly)])
 
-        if(args.sampleName.lower().endswith(".bam")):
+        if(args.reads1.lower().endswith(".bam")):
             cmd(
             ["rm", 
             "{}.1.fq".format(nameOnly), 
@@ -164,14 +192,14 @@ def main():
 
         cmd(
             ["STAR", 
-            "--genomeDir {path}".format(path=args.path),
+            "--genomeDir {path}".format(path=args.stargenome),
             "--readFilesIn {sampleName}.fq".format(sampleName=nameOnly),
-            "--runThreadN {}".format(args.cpus),
+            "--runThreadN {}".format(args.threads),
             "--chimSegmentMin 18",
             "--outSAMtype BAM Unsorted",
             "--outReadsUnmapped Fastx",
             "--outFilterMultimapNmax 100",
-            "--outFileNamePrefix ./{}.".format(nameOnly)])
+            "--outFileNamePrefix ./{}.".format(args.outname)])
 
         cmd(["echo", "Aligning reads to HPV genomes"])
 
