@@ -53,4 +53,4 @@ HPVtype   MappedReads   MappedProportion   MLE_Reads   MLE_Probability
 ```
 This is a table including each HPV type with at least one read mapped to it, indicating the number of mapped reads, the proportion of all reads mapped to the HPV reference genomes mapped to this type, the MLE of the expected number of reads for this HPV type, and the MLE probability of this HPV type.
 
-In addition to the results table, HPV-EM also generates read coverage maps for each HPV type with a non-zero MLE probability (OUTNAME.*.cov.pdf) and a visualization of the difference between the mapped reads proportions and MLE probabilites (OUTNAME.props.pdf).  The reads aligned to the HPV references are also recorded in BAM format (OUTNAME.aligned.*.bam).
+In addition to the results table, HPV-EM also generates read coverage maps for each HPV type with a non-zero MLE probability (OUTNAME.\*.cov.pdf) and a visualization of the difference between the mapped reads proportions and MLE probabilites (OUTNAME.props.pdf).  The reads aligned to the HPV references are also recorded in BAM format (OUTNAME.aligned.\*.bam).
