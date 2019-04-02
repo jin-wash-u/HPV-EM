@@ -57,7 +57,9 @@ def aligntoGenome(args, i, hpvBams):
         True, "{sampleName}.{i}.sai".format(sampleName=args.outname, i=i))
 
     cmd(["bwa", 
-         "samse", 
+         "samse",
+         "-n",
+         "100",
          "{}".format(args.reference), 
          "{sampleName}.{i}.sai".format(sampleName=args.outname, i=i),
          "{sampleName}.Unmapped.out.mate{i}".format(sampleName=args.outname, i=i)],
@@ -132,7 +134,7 @@ def main():
              "--chimSegmentMin 18",
              "--outSAMtype BAM Unsorted",
              "--outReadsUnmapped Fastx",
-             "--outFilterMultimapNmax 999",
+             "--outFilterMultimapNmax 100",
              "--outFileNamePrefix {}.".format(args.outname)])
 
         print "Aligning reads to HPV genomes"
@@ -146,7 +148,7 @@ def main():
              "--chimSegmentMin 18",
              "--outSAMtype BAM Unsorted",
              "--outReadsUnmapped Fastx",
-             "--outFilterMultimapNmax 999",
+             "--outFilterMultimapNmax 100",
              "--outFileNamePrefix {}.".format(args.outname)])
 
         print "Aligning reads to HPV genomes"

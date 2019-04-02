@@ -4,6 +4,7 @@ from __future__ import print_function
 import sys
 import os
 import re
+import time
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -59,10 +60,10 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                 hpvRef+=line.strip()
         hpvRefSeqDict[refId] = hpvRef
 
-    #For all HPV*.sam files in directory
+    #For all HPV*.bam files in directory
     for bam in hpvBams:
-        mate = bam.split('.')[2]
-
+        mate = bam.split('.')[-2]
+        
         ##Read the file
         cmd = ['samtools','view', bam]
         pipe = Popen(cmd, stdout=PIPE)
@@ -114,6 +115,10 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                             hpvTypeDict[refId] = {}
                         #Add read to dict of reads for this HPV type, value is [Lm,Le]
                         hpvTypeDict[refId][readName]=[Lm,Le]
+        while pipe.poll() is None:
+            time.sleep(0.5)
+        if pipe.returncode > 0:
+            raise RuntimeError('Error parsing viral-aligned BAM files; aborting.')
         pipe.stdout.close()
 
     totalReads = len(mapped_reads)
