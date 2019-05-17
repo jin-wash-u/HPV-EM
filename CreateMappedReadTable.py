@@ -7,7 +7,7 @@ import re
 import time
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt, lines as lines #import matplotlib.pyplot as plt
 from subprocess import Popen, PIPE
 
 #Calculate score to identify low-complexity reads using DUST algorithm
@@ -32,6 +32,7 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
     mapped_reads = set()
     hpvTypeDict = {}
     hpvRefIdDict = {}
+    hpvGeneDict = {}
     hpvRefSeqDict = {}
     hpvRefCovDict = {}
     installDir = os.path.dirname(os.path.abspath(__file__))
@@ -43,6 +44,19 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
             for line in fHpvNames:
                 line = line.strip().split('\t')
                 hpvRefIdDict[line[0]] = line[1]
+
+    if defaultHpvRef:
+        with open(installDir+'/reference/hpv_gene_annot.tsv','r') as fHpvGenes:
+            for line in fHpvGenes:
+                line = line.strip().split('\t')
+                if line[0] in hpvGeneDict:
+                    hpvGeneDict[line[0]].append(line[1:])
+                else:
+                    hpvGeneDict[line[0]] = [line[1:]]
+
+    annotColorDict = {'E1':'g','E2':'gray','E3':'y','E4':'r','E5':'orange',
+                      'E6':'b','E7':'m','E8':'c','L1':'indigo','L2':'brown'}
+    annotColors=['maroon','forestgreen','navy','g','gray','k','y','r','orange','b','m','c','indigo','pink']
 
     #Read in HPV reference file
     with open(hpvRefPath,'r') as fHpvRef:
@@ -65,8 +79,8 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
         mate = bam.split('.')[-2]
         
         ##Read the file
-        cmd = ['samtools','view', bam]
-        pipe = Popen(cmd, stdout=PIPE)
+        cmdArgs = ['samtools','view', bam]
+        pipe = Popen(cmdArgs, stdout=PIPE)
         ##loop over lines
         for line in pipe.stdout:
             #for each line, check if field 5 == 90M (or [readLen]M)
@@ -116,20 +130,26 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                         #Add read to dict of reads for this HPV type, value is [Lm,Le]
                         hpvTypeDict[refId][readName]=[Lm,Le]
         while pipe.poll() is None:
+            #Process not yet terminated, wait
             time.sleep(0.5)
         if pipe.returncode > 0:
             raise RuntimeError('Error parsing viral-aligned BAM files; aborting.')
-        pipe.stdout.close()
+        #pipe.stdout.close()
 
     totalReads = len(mapped_reads)
     #Write out table for EM algo
     outTable = [totalReads]
     for hpv in hpvTypeDict:
         if defaultHpvRef:
-            hpvType = hpvRefIdDict[hpv].replace('REF','').replace('.fa','')
+            if hpvRefIdDict[hpv][-6:]=='REF.fa':
+                hpvName = hpvRefIdDict[hpv][:-6]
+            elif hpvRefIdDict[hpv][-5:]=='nr.fa':
+                hpvName = hpvRefIdDict[hpv][:-5]
+            else:
+                hpvName = hpv
         else:
-            hpvType = hpv
-        outLine = hpvType
+            hpvName = hpv
+        outLine = hpvName
         for read in mapped_reads:
             if read in hpvTypeDict[hpv]:
                 Lm = hpvTypeDict[hpv][read][0]
@@ -142,17 +162,78 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
     #Plot coverage maps
     for hpv in hpvRefCovDict:
         fig = plt.figure()
+        r=fig.canvas.get_renderer()
         cov = fig.add_subplot(111)
         cov.plot(list(range(len(hpvRefCovDict[hpv]))), hpvRefCovDict[hpv], 'k', lw = 0.8)
-        cov.set_xlabel('Nucleotide', fontsize = 14, color = 'black')
+        #cov.set_xlabel('Nucleotide', fontsize = 14, color = 'black')
         cov.set_ylabel('Read coverage', fontsize = 14, color = 'black')
         if defaultHpvRef:
-            hpvName = hpvRefIdDict[hpv].replace('REF','').replace('.fa','')
+            if hpvRefIdDict[hpv][-6:]=='REF.fa':
+                hpvName = hpvRefIdDict[hpv][:-6]
+            elif hpvRefIdDict[hpv][-5:]=='nr.fa':
+                hpvName = hpvRefIdDict[hpv][:-5]
+            else:
+                hpvName = hpv.replace(' ','')
         else:
             hpvName = hpv.replace(' ','')
         plt.title(hpvName)
-        fig.tight_layout()
-        fig.savefig(outputName+'.'+hpvName+'.cov.pdf',bbox_inches='tight')
+
+        #Plot gene annotations
+        glines = []
+        glabels = []
+        y1end=0
+        y2end=0
+        ypos1 = plt.ylim()[0] - (plt.ylim()[1]-plt.ylim()[0])/12
+        ypos2 = plt.ylim()[0] - (plt.ylim()[1]-plt.ylim()[0])/7.9
+        ypos3 = plt.ylim()[0] - (plt.ylim()[1]-plt.ylim()[0])/5.8
+        yposlab1 = plt.ylim()[0] - (plt.ylim()[1]-plt.ylim()[0])/8.5
+        yposlab2 = plt.ylim()[0] - (plt.ylim()[1]-plt.ylim()[0])/6.2
+        yposlab3 = plt.ylim()[0] - (plt.ylim()[1]-plt.ylim()[0])/4.8
+        if hpvName in hpvGeneDict:
+            ic = 0
+            for gene in hpvGeneDict[hpvName]:
+                gName = gene[0]
+                gStart = int(gene[1])
+                gEnd = int(gene[2])
+                
+                tname1 = gName[:2].upper()
+                tname2 = gName[-2:].upper()
+                if (tname1 in annotColorDict and
+                    (len(gName)<3 or gName[2] not in '^*')):
+                    gc = annotColorDict[tname1]
+                elif (tname2 in annotColorDict and
+                      (len(gName)<3 or gName[-3] not in '^*')):
+                    gc = annotColorDict[tname2]
+                else:
+                    gc = annotColors[ic]
+                    ic += 1
+                    if ic>13:
+                        ic = 0
+                if gStart >= y1end:
+                    ypos = ypos1
+                    yposlab = yposlab1
+                    #y1end = gEnd
+                elif gStart >= y2end:
+                    ypos = ypos2
+                    yposlab = yposlab2
+                    #y2end = gEnd
+                else:
+                    ypos = ypos3
+                    yposlab = yposlab3
+                gline = cov.add_line(lines.Line2D([gStart,gEnd],[ypos,ypos],color=gc,clip_on=False, linewidth=2))
+                glines.append(gline)
+                glabel = cov.text(gStart, yposlab, gName)
+                glabels.append(glabel)
+
+                if ypos == ypos1:
+                    y1end = max(gEnd,
+                                cov.transData.inverted().transform(glabel.get_window_extent(renderer=r))[1][0])
+                elif ypos == ypos2:
+                    y2end = max(gEnd,
+                                cov.transData.inverted().transform(glabel.get_window_extent(renderer=r))[1][0])
+
+        #fig.tight_layout()
+        fig.savefig(outputName+'.'+hpvName+'.cov.pdf',bbox_inches='tight',bbox_extra_artists=glines+glabels)
         plt.close(fig)
     return outTable
 
