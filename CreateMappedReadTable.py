@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 #Create table of mapped read matches and mismatches for use as input to HPV type EM algorithm
-from __future__ import print_function
+#from __future__ import print_function
 import sys
 import os
 import re
 import time
+import argparse as argp
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt, lines as lines #import matplotlib.pyplot as plt
@@ -28,13 +29,14 @@ def dust(read):
     return S
 
 
-def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, outputName='hpvType'):
+def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, outputName='hpvType', covMapYmax=0):
     mapped_reads = set()
     hpvTypeDict = {}
     hpvRefIdDict = {}
     hpvGeneDict = {}
     hpvRefSeqDict = {}
     hpvRefCovDict = {}
+    hpvRefReadCountsDict = {}
     installDir = os.path.dirname(os.path.abspath(__file__))
 
     #Make dict to translate ref seq names (SAM field 2) into HPV type names
@@ -56,7 +58,7 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
 
     annotColorDict = {'E1':'g','E2':'gray','E3':'y','E4':'r','E5':'orange',
                       'E6':'b','E7':'m','E8':'c','L1':'indigo','L2':'brown'}
-    annotColors=['maroon','forestgreen','navy','g','gray','k','y','r','orange','b','m','c','indigo','pink']
+    annotColors=['maroon','navy','pink','g','gray','k','y','r','orange','b','m','c','indigo']
 
     #Read in HPV reference file
     with open(hpvRefPath,'r') as fHpvRef:
@@ -114,9 +116,40 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
 
                         #Add name to set of mapped_reads names
                         mapped_reads.add(readName)
+
+                        #Update read coverage depths for this HPV type
                         if refId not in hpvRefCovDict:
                             hpvRefCovDict[refId] = [0]*len(hpvRefSeqDict[refId])
                         hpvRefCovDict[refId][(readPos-1):(readPos-1+readLen)] = [c+1 for c in hpvRefCovDict[refId][(readPos-1):(readPos-1+readLen)]]
+
+                        #Update gene counts for this HPV type
+                        if defaultHpvRef:
+                            if hpvRefIdDict[refId][-6:]=='REF.fa':
+                                hpvName = hpvRefIdDict[refId][:-6]
+                            elif hpvRefIdDict[refId][-5:]=='nr.fa':
+                                hpvName = hpvRefIdDict[refId][:-5]
+                            else:
+                                hpvName = refId.replace(' ','')
+                        else:
+                            hpvName = refId.replace(' ','')
+
+                        if hpvName not in hpvRefReadCountsDict:
+                            hpvRefReadCountsDict[hpvName] = {}
+                            if hpvName in hpvGeneDict:
+                                for gene in hpvGeneDict[hpvName]:
+                                    gName = gene[0]
+                                    hpvRefReadCountsDict[hpvName][gName] = 0
+                                    
+                        for gene in hpvGeneDict[hpvName]:
+                            gName = gene[0]
+                            gStart = int(gene[1])
+                            gEnd = int(gene[2])
+                            rStart = readPos
+                            rEnd = readPos+readLen
+                            if gStart <= rEnd and rStart <= gEnd:
+                                hpvRefReadCountsDict[hpvName][gName] += 1
+                                
+                        #Compare read to reference sequence, get number of matching (Lm) and mismatched (Le) bases
                         refSeq = hpvRef[(readPos-1):(readPos-1+readLen)].upper()
                         Le = 0
                         for j in range(readLen):
@@ -159,6 +192,19 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                 outLine += '\t0\t-1\t-1'
         outTable.append(outLine)
 
+    #Output read counts tables
+    with open(outputName+'.readCounts.tsv','w') as fCounts:
+        for hpvName in sorted(hpvRefReadCountsDict):
+            fCounts.write(hpvName+'\n')
+            outline1=''
+            outline2=''
+            for gene in sorted(hpvRefReadCountsDict[hpvName]):
+                outline1 += gene+'\t'
+                outline2 += str(hpvRefReadCountsDict[hpvName][gene])+'\t'
+            outline1 = outline1[:-1]+'\n'
+            outline2 = outline2[:-1]+'\n'
+            fCounts.write(outline1+outline2+'\n')
+
     #Plot coverage maps
     for hpv in hpvRefCovDict:
         fig = plt.figure()
@@ -178,6 +224,9 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
             hpvName = hpv.replace(' ','')
         plt.title(hpvName)
 
+        if covMapYmax:
+            cov.set_ylim(top=covMapYmax)
+
         #Plot gene annotations
         glines = []
         glabels = []
@@ -191,6 +240,7 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
         yposlab3 = plt.ylim()[0] - (plt.ylim()[1]-plt.ylim()[0])/4.8
         if hpvName in hpvGeneDict:
             ic = 0
+            gNameLast = ''
             for gene in hpvGeneDict[hpvName]:
                 gName = gene[0]
                 gStart = int(gene[1])
@@ -205,8 +255,9 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                       (len(gName)<3 or gName[-3] not in '^*')):
                     gc = annotColorDict[tname2]
                 else:
+                    if gName != gNameLast:
+                        ic += 1
                     gc = annotColors[ic]
-                    ic += 1
                     if ic>13:
                         ic = 0
                 if gStart >= y1end:
@@ -231,6 +282,7 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                 elif ypos == ypos2:
                     y2end = max(gEnd,
                                 cov.transData.inverted().transform(glabel.get_window_extent(renderer=r))[1][0])
+                gNameLast = gName
 
         #fig.tight_layout()
         fig.savefig(outputName+'.'+hpvName+'.cov.pdf',bbox_inches='tight',bbox_extra_artists=glines+glabels)
@@ -239,8 +291,29 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
 
 
 def main(argv):
-    outTable = mapReads(argv[1:3])
-    with open('hpvType.mappedReads.tsv','w') as outFile:
+    #outTable = mapReads(argv[1:3])
+    #print(str([argv[1]])+' '+str(argv[2]))
+    #hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, outputName='hpvType', covMapYmax=0
+    mapParse = argp.ArgumentParser()
+    mapParse.add_argument('bam1')
+    mapParse.add_argument('bam2', nargs='?', help='(optional)', default='not supplied')
+    mapParse.add_argument('-r','--reference', default=0)
+    mapParse.add_argument('-o','--outname', type=str, default='./hpvType')
+    mapParse.add_argument('-d','--disabledust', action='store_true')
+    mapParse.add_argument('-y','--ylimit', type=int, help='fix a maximum y-value for all coverage map axes', default=0) 
+    args = mapParse.parse_args()
+
+    hpvBams = [args.bam1]
+    if args.bam2 != "not supplied":
+        hpvBams += [args.bam2]
+        
+    if(args.reference == 0):
+        defaultHpvRef = True
+    else:
+        defaultHpvRef = False
+        
+    outTable = mapReads(hpvBams, defaultHpvRef=defaultHpvRef, hpvRefPath=args.reference, filterLowComplex=not(args.disabledust), outputName=args.outname, covMapYmax=args.ylimit)
+    with open(args.outname+'.mappedReads.tsv','w') as outFile:
         for line in outTable:
             outFile.write(str(line)+'\n')
 

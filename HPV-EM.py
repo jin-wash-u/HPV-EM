@@ -161,7 +161,7 @@ def main():
         os.remove('{}.Log.out'.format(args.outname))
         os.remove('{}.SJ.out.tab'.format(args.outname))
         os.remove('{}.Chimeric.out.junction'.format(args.outname))
-        os.remove('{}.Chimeric.out.sam'.format(args.outname))
+        # os.remove('{}.Chimeric.out.sam'.format(args.outname))
         os.remove('{}.Aligned.out.bam'.format(args.outname))
 
     print "Creating read table"

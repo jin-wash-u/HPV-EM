@@ -188,6 +188,8 @@ def EmAlgo(readsTable, outputName='hpvType', printResult=True):
         fig.savefig(outputName+'.props.pdf')
         plt.close(fig)
     else:
+        with open(outputName+'.results.tsv','w') as fOut:
+            fOut.write('No HPV types detected\n')
         if printResult:
             print('No HPV types detected')
 
