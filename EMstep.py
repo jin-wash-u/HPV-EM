@@ -19,12 +19,18 @@ class mappedRead:
         self.hpvType = inputList[0]
         self.readInfo = []
         self.readNum = 0
+        self.genes = []
         count=0
         for val in inputList[1:]:
-            if (count%3)==0:
+            if (count%4)==0:
                 val = int(val)
                 self.readInfo.append([val])
                 self.readNum+=val
+            elif (count%4)==3:
+                if not val:
+                    self.genes.append([])
+                else:
+                    self.genes.append(val.split(','))
             else:
                 self.readInfo[-1].append(float(val))
             count+=1
@@ -39,7 +45,8 @@ def natural_order(l):
 def EmAlgo(readsTable, outputName='hpvType', printResult=True):
     mappedReads = []
     totalReads = 0
-    uniqReads = readsTable[0]
+    uniqReads = int(readsTable[0].split('\t')[0])
+    isReadAmbig = readsTable[0].split('\t')[1:]
     for line in readsTable[1:]:
         line = line.split('\t')
         mappedReads.append(mappedRead(line))
@@ -125,6 +132,9 @@ def EmAlgo(readsTable, outputName='hpvType', printResult=True):
         readProps = []
         emProps = []
         output=[]
+        hpvGeneReadCountsDict = {}
+        #hpvEmPropsDict = {}
+        geneNamesSet = set()
         for j,hpv in enumerate(mappedReads):
             hpvName = hpv.hpvType
             types.append(hpvName)
@@ -135,6 +145,24 @@ def EmAlgo(readsTable, outputName='hpvType', printResult=True):
             emProps.append(phiOut[j])
             if phiOut[j] < 0.00001 and os.path.exists(outputName+'.'+hpvName+'.cov.pdf'):
                 os.remove(outputName+'.'+hpvName+'.cov.pdf')
+            #Get per-gene read counts
+            #hpvEmPropsDict[hpvName] = phiOut[j]
+            if hpvName not in hpvGeneReadCountsDict:
+                hpvGeneReadCountsDict[hpvName] = {}
+            
+            for ii in range(len(hpv.readInfo)):
+                geneList = hpv.genes[ii]
+                if isReadAmbig[ii] == 'U':
+                    val = 1
+                else:
+                    val = phiOut[j]
+                if geneList:
+                    for gene in geneList:
+                        geneNamesSet.add(gene)
+                        if gene not in hpvGeneReadCountsDict[hpvName]:
+                            hpvGeneReadCountsDict[hpvName][gene] = val
+                        else:
+                            hpvGeneReadCountsDict[hpvName][gene] += val
 
         #Print and write results to output file
         lOrd = natural_order(types)
@@ -151,6 +179,19 @@ def EmAlgo(readsTable, outputName='hpvType', printResult=True):
             fOut.write('HPVtype\tMappedReads\tMappedProportion\tMLE_Reads\tMLE_Probability\n')
             for i in lOrd:
                 fOut.write(output[i]+'\n')
+
+        #Write out read counts table
+        geneNamesList = sorted(geneNamesSet)
+        with open(outputName+'.readCounts.tsv','w') as fCounts:
+            fCounts.write('Type\t'+'\t'.join(geneNamesList)+'\n')
+            for hpvType in hpvGeneReadCountsDict:
+                fCounts.write(hpvType)
+                for gene in geneNamesList:
+                    if gene in hpvGeneReadCountsDict[hpvType]:
+                        fCounts.write('\t{:.3f}'.format(hpvGeneReadCountsDict[hpvType][gene]))
+                    else:
+                        fCounts.write('\t0')
+                fCounts.write('\n')
 
         #Plot pie charts of probabilities, before and after
         ordTypes = map(types.__getitem__, lOrd)

@@ -1,3 +1,6 @@
+HPV-EM v0.6
+Updated HPV references, changed HPV reference IDs to use the HPV name and version (e.g. HPV1REF.1), records which reads are ambiguous
+
 HPV-EM v0.5
 -Added change_log.txt file
 -Added options for running CreateMappedReadTable.py as a stand-alone function
