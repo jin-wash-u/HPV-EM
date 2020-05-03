@@ -14,7 +14,12 @@ HPV-EM is an HPV genotyping tool that utilizes an expectation maximization algor
 ## Installation
 First ensure the prerequisites have been installed on your system and that STAR and SAMtools appear in your PATH.  In order for STAR to align reads against the human genome, you will first need to obtain the human reference genome in FASTA format and a corresponding annotation file in GTF format (these can be downloaded from [Ensembl](https://ensembl.org/Homo_sapiens/Info/Index)).  You must then generate genome indexes for STAR aligner using its genomeGenerate command (see the STAR documentation for details).
 
-You can then download HPV-EM from https://github.com/jin-wash-u/HPV-EM.  Click on "Clone or download" and then click on "Download ZIP".  Unzip the contents in the desired location.  STAR must also generate indexes for the viral reference genome.  By default, this can be found in reference/combined_pave_hpv.fa.
+You can then download HPV-EM from https://github.com/jin-wash-u/HPV-EM.  Click on "Clone or download" and then click on "Download ZIP".  Unzip the contents in the desired location.  
+
+STAR must also generate indexes for the viral reference genome.  The packaged set of HPV genomes is found at reference/combined_pave_hpv.fa.  This default viral reference should be indexed using the command:
+```
+$ STAR --runMode genomeGenerate --genomeFastaFiles reference/combined_pave_hpv.fa --genomeSAindexNbases 9 --genomeDir reference/combined_pave_hpv_STAR
+```
 
 If you desire, you can include HPV-EM in your PATH by running:
 ```
