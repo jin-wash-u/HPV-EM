@@ -9,7 +9,7 @@ from EMstep import EmAlgo
 from CreateMappedReadTable import mapReads
 
 def prereqs():
-    programs = ["python", "bwa", "samtools", "STAR"]
+    programs = ["python", "samtools", "STAR"]
     ready = True;
 
     for i in range(0, len(programs)):
@@ -27,11 +27,11 @@ def cmd(args, write=False, filepath=None):
         try:
             subp.check_call(args, stdout=sys.stdout)
         except subp.CalledProcessError, e:
-            #print("Subprocesss error with code: " +  str(e.returncode))
-            exit()
+            print("Subprocesss error with code: " +  str(e.returncode))
+            sys.exit(e.returncode)
         except:
             print("An unknown error occurred")
-            exit()
+            sys.exit(1)
 
         sys.stdout = temp
 
@@ -40,42 +40,13 @@ def cmd(args, write=False, filepath=None):
             print(' '.join(args))
             subp.check_call(args)
         except subp.CalledProcessError, e:
-            #print("Subprocesss error with code: " + str(e.returncode))
-            exit()
+            print("Subprocesss error with code: " + str(e.returncode))
+            sys.exit(e.returncode)
         except:
             print("An unknown error occurred")
-            exit()
+            exit(1)
 
     return
-
-
-def aligntoGenome(args, i, hpvBams):
-    cmd(["bwa", 
-         "aln", 
-         "-t {}".format(args.threads),
-         "{}".format(args.reference),
-         "{sampleName}.Unmapped.out.mate{i}".format(sampleName=args.outname, i=i)], 
-        True, "{sampleName}.{i}.sai".format(sampleName=args.outname, i=i))
-
-    cmd(["bwa", 
-         "samse",
-         "-n",
-         "100",
-         "{}".format(args.reference), 
-         "{sampleName}.{i}.sai".format(sampleName=args.outname, i=i),
-         "{sampleName}.Unmapped.out.mate{i}".format(sampleName=args.outname, i=i)],
-        True,"{sampleName}.{i}.aln-se.sam".format(sampleName=args.outname,i=i))
-
-    cmdStr = 'samtools view -F4 -@ {t} -o {sampleName}.aligned.{i}.bam {sampleName}.{i}.aln-se.sam'.format(t=args.threads-1, sampleName=args.outname, i=i)
-    cmd(cmdStr.split())
-    
-    hpvBams.append("{sampleName}.aligned.{i}.bam".format(sampleName=args.outname, i=i))
-
-    if not args.keepint:
-        #clean up files
-        os.remove("{sampleName}.Unmapped.out.mate{i}".format(sampleName=args.outname, i=i))
-        os.remove("{sampleName}.{i}.sai".format(sampleName=args.outname, i=i))
-        os.remove("{sampleName}.{i}.aln-se.sam".format(sampleName=args.outname, i=i))
 
         
 def main(): 
@@ -148,10 +119,9 @@ def main():
                     break
 
         print "Aligning reads to HPV genomes"
-        #aligntoGenome(args,1,hpvBams)
         cmd(["STAR", 
              "--genomeDir {path}".format(path=args.starviral),
-             "--readFilesIn {}".format(args.reads1),
+             "--readFilesIn {sampleName}.Unmapped.out.mate1".format(sampleName=args.outname),
              "--runThreadN {}".format(args.threads),
              "--twopassMode Basic",
              "--outSAMtype BAM Unsorted",
@@ -184,7 +154,7 @@ def main():
         print "Aligning reads to HPV genomes"
         cmd(["STAR", 
              "--genomeDir {path}".format(path=args.starviral),
-             "--readFilesIn {}".format(args.reads1),
+             "--readFilesIn {sampleName}.Unmapped.out.mate1".format(sampleName=args.outname),
              "--runThreadN {}".format(args.threads),
              "--twopassMode Basic",
              "--outSAMtype BAM Unsorted",
@@ -194,10 +164,9 @@ def main():
              "--outFilterMismatchNoverLmax 0.08",
              "--outFileNamePrefix {}.1.".format(args.outname)])
         hpvBams.append('{}.1.Aligned.out.bam'.format(args.outname))
-
         cmd(["STAR", 
              "--genomeDir {path}".format(path=args.starviral),
-             "--readFilesIn {}".format(args.reads2),
+             "--readFilesIn {sampleName}.Unmapped.out.mate2".format(sampleName=args.outname),
              "--runThreadN {}".format(args.threads),
              "--twopassMode Basic",
              "--outSAMtype BAM Unsorted",
