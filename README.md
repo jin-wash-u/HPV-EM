@@ -56,7 +56,7 @@ HPV-EM.py [-h] [-t THREADS] [-r REFERENCE] [--starviral STARVIRAL] [-o OUTNAME] 
      Print program's version number and exit
 
 ### Required arguments
-- -s STARGENOME, --stargenome STARGENOME
+- -s STARGENOME, --stargenome STARGENOME  
      Path to the directory containing STAR-generated human genome index files
 
 ### Positional arguments
