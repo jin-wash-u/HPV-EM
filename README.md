@@ -31,7 +31,8 @@ where `$INSTALLDIR` is the folder into which you extracted the HPV-EM files.
 ## Input
 Running HPV-EM with the -h option (or --help) will print a desciption of its optional and required input arguments.  A description of each follows.
 ```
-HPV-EM.py [-h] [-t THREADS] [-r REFERENCE] [--starviral STARVIRAL] [-o OUTNAME] [-d] [--tpm TPM] [-p] [-k] -s STARGENOME reads1 [reads2]
+HPV-EM.py [-h] [-t THREADS] [-r REFERENCE] [--starviral STARVIRAL] [-o OUTNAME]
+          [-d] [--tpm TPM] [-p] [-k] [-v] -s STARGENOME reads1 [reads2]
 ```
 ### Optional arguments
 - -h, --help  
