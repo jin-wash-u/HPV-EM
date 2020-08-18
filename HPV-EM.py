@@ -8,6 +8,8 @@ from whichcraft import which
 from EMstep import EmAlgo
 from CreateMappedReadTable import mapReads
 
+__version__ = "1.0"
+
 def prereqs():
     programs = ["python", "samtools", "STAR"]
     ready = True;
@@ -50,7 +52,7 @@ def cmd(args, write=False, filepath=None):
 
         
 def main(): 
-    myparse = argp.ArgumentParser(description='Run the HPV-EM genotyping tool', formatter_class=lambda prog: argp.RawTextHelpFormatter(prog, width=99999))
+    myparse = argp.ArgumentParser(prog='HPV-EM', description='HPV-EM is an HPV genotyping tool that utilizes an expectation maximization algorithm to identify the presence of different HPV genotypes in a sample from RNA-seq data.', formatter_class=lambda prog: argp.RawTextHelpFormatter(prog, width=99999))
     
     # positional arguments
     myparse.add_argument("reads1", help="single-end FASTQ file or first paired-end FASTQ file")
@@ -65,6 +67,7 @@ def main():
     myparse.add_argument('--tpm', type=float, help="TPM threshold for identifying a true positive [1.48]", default=1.48)
     myparse.add_argument('-p', '--printem', action='store_true', help="print EM results to STDOUT")
     myparse.add_argument('-k', '--keepint', action='store_true', help="keep intermediate files")
+    myparse.add_argument('-v', '--version', action='version', version='%(prog)s {}'.format(__version__))
 
     # other required arguments
     requiredNamed = myparse.add_argument_group('required arguments')
