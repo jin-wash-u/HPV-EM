@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 # Difference value between successive loglikelihoods below which algorithm is deemed to have converged
 conVal = 1e-4
 numIter = 5
+maxSteps = 500
 
 class mappedRead:
     def __init__(self, inputList):
@@ -64,7 +65,7 @@ def EmAlgo(readsTable, allReadsNum, thresholdTpm=1.5, outputName='hpvType', prin
                 err = 0.005
                 phi = [1./k]*k
             else:
-                err = np.random.random(1)[0]
+                err = 0.05*np.random.random(1)[0]
                 phi = np.random.random(k)
                 phi /= phi.sum()
 
@@ -77,8 +78,8 @@ def EmAlgo(readsTable, allReadsNum, thresholdTpm=1.5, outputName='hpvType', prin
             converged=False
             while not converged:
                 steps+=1
-                if(steps>10000):
-                    raise RuntimeError('EM algorithm failed to converge after 10000 steps; aborting.')
+                if(steps>maxSteps):
+                    raise RuntimeError('EM algorithm failed to converge after {} steps; aborting.'.format(maxSteps))
                     
                 # E step
                 for j,hpv in enumerate(mappedReads):
