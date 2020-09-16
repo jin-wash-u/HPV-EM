@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
+#from __future__ import print_function
 import numpy as np
 import math
 import sys
@@ -219,9 +219,9 @@ def EmAlgo(readsTable, allReadsNum, thresholdTpm=1.5, outputName='hpvType', prin
                     fCounts.write('\n')
 
             # Plot pie charts of probabilities, before and after
-            ordTypes = map(typesAll.__getitem__, lOrdAll)
-            ordReadProps = map(readProps.__getitem__, lOrdAll)
-            ordEmProps = map(emProps.__getitem__, lOrdAll)
+            ordTypes = list(map(typesAll.__getitem__, lOrdAll))
+            ordReadProps = list(map(readProps.__getitem__, lOrdAll))
+            ordEmProps = list(map(emProps.__getitem__, lOrdAll))
             ordRpLabels = ['{}\n{:.1f}%'.format(typ, ordReadProps[i]*100) if ordReadProps[i] > 0.01 else '' for i,typ in enumerate(ordTypes)]
             ordEmLabels = ['{}\n{:.1f}%'.format(typ, ordEmProps[i]*100) if ordEmProps[i] > 0.01 else '' for i,typ in enumerate(ordTypes)]
 

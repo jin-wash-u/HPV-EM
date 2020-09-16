@@ -28,8 +28,8 @@ def cmd(args, write=False, filepath=None):
 
         try:
             subp.check_call(args, stdout=sys.stdout)
-        except subp.CalledProcessError, e:
-            print("Subprocesss error with code: " +  str(e.returncode))
+        except subp.CalledProcessError as e:
+            print("Subprocess error with code: " +  str(e.returncode))
             sys.exit(e.returncode)
         except:
             print("An unknown error occurred")
@@ -41,7 +41,7 @@ def cmd(args, write=False, filepath=None):
         try:
             print(' '.join(args))
             subp.check_call(args)
-        except subp.CalledProcessError, e:
+        except subp.CalledProcessError as e:
             print("Subprocesss error with code: " + str(e.returncode))
             sys.exit(e.returncode)
         except:
@@ -102,7 +102,7 @@ def main():
     allReadsNum = -1
     hpvBams = []
     if args.reads2 == "not supplied":
-        print "Aligning reads to human genome"
+        print("Aligning reads to human genome")
         cmd(["STAR", 
              "--genomeDir {path}".format(path=args.stargenome),
              "--readFilesIn {}".format(args.reads1),
@@ -118,10 +118,10 @@ def main():
                 line = line.strip()
                 if line.startswith('Number of input reads'):
                     allReadsNum = int(line.split()[-1])
-                    print "Total reads: {}".format(allReadsNum)
+                    print("Total reads: {}".format(allReadsNum))
                     break
 
-        print "Aligning reads to HPV genomes"
+        print("Aligning reads to HPV genomes")
         cmd(["STAR", 
              "--genomeDir {path}".format(path=args.starviral),
              "--readFilesIn {sampleName}.Unmapped.out.mate1".format(sampleName=args.outname),
@@ -136,7 +136,7 @@ def main():
         hpvBams.append('{}.1.Aligned.out.bam'.format(args.outname))
 
     else:
-        print "Aligning reads to human genome"
+        print("Aligning reads to human genome")
         cmd(["STAR", 
              "--genomeDir {path}".format(path=args.stargenome),
              "--readFilesIn {} {}".format(args.reads1, args.reads2),
@@ -154,7 +154,7 @@ def main():
                     allReadsNum = int(line.split()[-1])
                     break
 
-        print "Aligning reads to HPV genomes"
+        print("Aligning reads to HPV genomes")
         cmd(["STAR", 
              "--genomeDir {path}".format(path=args.starviral),
              "--readFilesIn {sampleName}.Unmapped.out.mate1".format(sampleName=args.outname),
@@ -204,10 +204,10 @@ def main():
             shutil.rmtree('{}.2._STARgenome'.format(args.outname))
             shutil.rmtree('{}.2._STARpass1'.format(args.outname))
 
-    print "Creating read table"
+    print("Creating read table")
     readsTable = mapReads(hpvBams, defaultHpvRef=defaultHpvRef, hpvRefPath=args.reference, filterLowComplex=not(args.disabledust), outputName=args.outname)
 
-    print "Running EM algorithm"
+    print("Running EM algorithm")
     EmAlgo(readsTable, allReadsNum, thresholdTpm=args.tpm, outputName=args.outname, printResult=args.printem)
 
     sys.exit(0)

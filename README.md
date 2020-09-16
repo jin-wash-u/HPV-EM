@@ -3,7 +3,7 @@
 HPV-EM is an HPV genotyping tool that utilizes an expectation maximization algorithm to identify the presence of different HPV genotypes in a sample from RNA-seq data. 
 
 ## Prerequisites
-  - [python](https://www.python.org/) (v 2.7)
+  - [python](https://www.python.org/) (v 2.7 or 3+)
     - [NumPy](http://http://www.numpy.org/)
     - [Matplotlib](https://matplotlib.org/)
     - [whichcraft](https://pypi.org/project/whichcraft/)

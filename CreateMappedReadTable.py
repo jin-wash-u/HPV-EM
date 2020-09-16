@@ -119,7 +119,10 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
         
         # Read the file
         cmdArgs = ['samtools','view', bam]
-        pipe = Popen(cmdArgs, stdout=PIPE)
+        if sys.version[0] == '2':
+            pipe = Popen(cmdArgs, stdout=PIPE)
+        else:
+            pipe = Popen(cmdArgs, stdout=PIPE, encoding='utf8')
         # loop over lines
         for line in pipe.stdout:
             # Get read name from field 0, SAM flags from f1, ref id from f2,
@@ -132,13 +135,13 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
             try:
                 editDist = [tag for tag in readTags if tag.startswith('NM')][0].split(':')[-1]
             except:
-                print 'Error parsing tags:'
-                print readName
-                print readTags
+                print('Error parsing tags:')
+                print(readName)
+                print(readTags)
                 sys.exit(1)
             
             # Add this read to the dictionary
-            cigarList = filter(None, re.split('(\D+)',readCIGAR))
+            cigarList = list(filter(None, re.split('(\D+)',readCIGAR)))
             alignedSeq = ''
             pos=0
             clipLen=0
@@ -222,7 +225,7 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
     mappedCount = 0
     outLine = ''
     nameLine = ''
-    for readName in dictReadName_ReadAligns.keys():
+    for readName in list(dictReadName_ReadAligns.keys()):
         ra = dictReadName_ReadAligns[readName]
         if filterLowComplex and not any(ra.passDust):
             del dictReadName_ReadAligns[readName]
@@ -263,7 +266,7 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                     for mInd in range(2):
                         mate = ra.dictRefId_AlignInfo[refId][mInd]
                         if mate:
-                            cigarList = filter(None, re.split('(\D+)',mate.cigar))
+                            cigarList = list(filter(None, re.split('(\D+)',mate.cigar)))
                             pos = mate.pos
                             for cigar in zip(cigarList[0::2], cigarList[1::2]):
                                 if cigar[1] in 'M=X':
@@ -272,8 +275,8 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                                         try:
                                             hpvRefIdCovDict[refId][pos-1] += 1
                                         except:
-                                            print 'readName: {}; refID: {}; startPos: {}; CIGAR: {}; pos: {}'.format(readName,refId,mate.pos,mate.cigar,pos)
-                                            print 'Len(hpvRefIdCovDict[refId]): {}'.format(len(hpvRefIdCovDict[refId]))
+                                            print('readName: {}; refID: {}; startPos: {}; CIGAR: {}; pos: {}'.format(readName,refId,mate.pos,mate.cigar,pos))
+                                            print('Len(hpvRefIdCovDict[refId]): {}'.format(len(hpvRefIdCovDict[refId])))
                                             raise
 
                                         # Mark any genes this read covers
