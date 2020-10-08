@@ -42,7 +42,7 @@ def cmd(args, write=False, filepath=None):
             print(' '.join(args))
             subp.check_call(args)
         except subp.CalledProcessError as e:
-            print("Subprocesss error with code: " + str(e.returncode))
+            print("Subprocess error with code: " + str(e.returncode))
             sys.exit(e.returncode)
         except:
             print("An unknown error occurred")
@@ -101,17 +101,19 @@ def main():
 
     allReadsNum = -1
     hpvBams = []
-    if args.reads2 == "not supplied":
-        print("Aligning reads to human genome")
-        cmd(["STAR", 
+    argsHumanAlignSTAR = ["STAR", 
              "--genomeDir {path}".format(path=args.stargenome),
-             "--readFilesIn {}".format(args.reads1),
              "--runThreadN {}".format(args.threads),
              "--chimSegmentMin 18",
              "--outSAMtype BAM Unsorted",
              "--outReadsUnmapped Fastx",
              "--outFilterMultimapNmax 100",
-             "--outFileNamePrefix {}.".format(args.outname)])
+             "--outFileNamePrefix {}.".format(args.outname)]
+    if args.reads1.endswith(".gz"):
+        argsHumanAlignSTAR.append("--readFilesCommand zcat")
+    if args.reads2 == "not supplied":
+        print("Aligning reads to human genome")
+        cmd(argsHumanAlignSTAR + ["--readFilesIn {}".format(args.reads1)])
 
         with open('{}.Log.final.out'.format(args.outname),'r') as logFile:
             for line in logFile:
@@ -137,15 +139,7 @@ def main():
 
     else:
         print("Aligning reads to human genome")
-        cmd(["STAR", 
-             "--genomeDir {path}".format(path=args.stargenome),
-             "--readFilesIn {} {}".format(args.reads1, args.reads2),
-             "--runThreadN {}".format(args.threads),
-             "--chimSegmentMin 18",
-             "--outSAMtype BAM Unsorted",
-             "--outReadsUnmapped Fastx",
-             "--outFilterMultimapNmax 100",
-             "--outFileNamePrefix {}.".format(args.outname)])
+        cmd(argsHumanAlignSTAR + ["--readFilesIn {} {}".format(args.reads1, args.reads2)])
 
         with open('{}.Log.final.out'.format(args.outname),'r') as logFile:
             for line in logFile:
