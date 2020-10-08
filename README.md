@@ -61,8 +61,9 @@ HPV-EM.py [-h] [-t THREADS] [-r REFERENCE] [--starviral STARVIRAL] [-o OUTNAME]
      Path to the directory containing STAR-generated human genome index files
 
 ### Positional arguments
-- reads1 : A FASTQ file of single-end RNA-seq reads or the first of two paired-end FASTQs
+- reads1 : A FASTQ file of single-end RNA-seq reads or the first of two paired-end FASTQs 
 - reads2 : (optional) Second paired-end FASTQ file
+  Reads files may be gzipped; if so, the filename must end in ".gz".
 
 ## Output
   The output of the EM algorithm is written to OUTNAME.results.tsv (and, optionally, printed to stdout).  The first two lines indicate how may steps the algorithm took to converge and the maximum likelihood estimate (MLE) of the sequencing error rate.  The remaining lines have the format:
