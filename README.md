@@ -62,7 +62,7 @@ HPV-EM.py [-h] [-t THREADS] [-r REFERENCE] [--starviral STARVIRAL] [-o OUTNAME]
 
 ### Positional arguments
 - reads1 : A FASTQ file of single-end RNA-seq reads or the first of two paired-end FASTQs 
-- reads2 : (optional) Second paired-end FASTQ file 
+- reads2 : (optional) Second paired-end FASTQ file  
   Reads files may be gzipped; if so, the filename must end in ".gz".
 
 ## Output
