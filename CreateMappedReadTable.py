@@ -68,7 +68,7 @@ def dust(read):
     return S
 
 
-def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, outputName='hpvType', covMapYmax=0):
+def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', annot='', filterLowComplex=True, outputName='hpvType', covMapYmax=0):
     mapped_reads = set()
     dictReadName_ReadAligns = {}
     hpvRefIdMappedSet = set()
@@ -83,8 +83,11 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
     if defaultHpvRef:
         hpvRefPath = installDir+'/reference/combined_pave_hpv.fa'
         
-    if defaultHpvRef:
-        with open(installDir+'/reference/hpv_gene_annot.tsv','r') as fHpvGenes:
+    if defaultHpvRef and not annot:
+        annot = installDir+'/reference/hpv_gene_annot.tsv'
+
+    if annot:
+        with open(annot,'r') as fHpvGenes:
             for line in fHpvGenes:
                 line = line.strip().split('\t')
                 if line[0] in hpvRefIdGeneDict:
@@ -280,12 +283,13 @@ def mapReads(hpvBams, defaultHpvRef=True, hpvRefPath='', filterLowComplex=True, 
                                             raise
 
                                         # Mark any genes this read covers
-                                        for gene in hpvRefIdGeneDict[refId]:
-                                            gName = gene[0]
-                                            gStart = int(gene[1])
-                                            gEnd = int(gene[2])
-                                            if gStart <= pos and pos <= gEnd:
-                                                geneSet.add(gName)
+                                        if refId in hpvRefIdGeneDict:
+                                            for gene in hpvRefIdGeneDict[refId]:
+                                                gName = gene[0]
+                                                gStart = int(gene[1])
+                                                gEnd = int(gene[2])
+                                                if gStart <= pos and pos <= gEnd:
+                                                    geneSet.add(gName)
 
                                         pos = pos+1
                                 elif cigar[1] in 'DN':

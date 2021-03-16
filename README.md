@@ -41,6 +41,8 @@ HPV-EM.py [-h] [-t THREADS] [-r REFERENCE] [--starviral STARVIRAL] [-o OUTNAME]
      Some portions of the HPV-EM pipeline support multithreading; if you wish to use this feature, set this to the number of cores available (default: 1)
 - -r REFERENCE, --reference REFERENCE  
      HPV-EM includes a comprehensive set of HPV reference genomes assembled by PaVE, the use of which is recommended.  However, if you wish to supply your own viral reference in FASTA format, use this option with the path to the file
+- -a ANNOTATION, --annotation ANNOTATION  
+     A file of viral gene annotations in TSV format to be used in place of the default HPV gene annotations [$INSTALLDIR/reference/hpv_gene_annot.tsv]
 - --starviral STARVIRAL  
      path to a directory containing STAR-generated viral genome indexes based on the reference FASTA
 - -o OUTNAME, --outname OUTNAME  

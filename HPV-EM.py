@@ -8,7 +8,7 @@ from whichcraft import which
 from EMstep import EmAlgo
 from CreateMappedReadTable import mapReads
 
-__version__ = "1.0"
+__version__ = "1.0.2"
 
 def prereqs():
     programs = ["python", "samtools", "STAR"]
@@ -51,7 +51,9 @@ def cmd(args, write=False, filepath=None):
     return
 
         
-def main(): 
+def main():
+    installDir = os.path.dirname(os.path.abspath(__file__))
+    
     myparse = argp.ArgumentParser(prog='HPV-EM', description='HPV-EM is an HPV genotyping tool that utilizes an expectation maximization algorithm to identify the presence of different HPV genotypes in a sample from RNA-seq data.', formatter_class=lambda prog: argp.RawTextHelpFormatter(prog, width=99999))
     
     # positional arguments
@@ -60,7 +62,8 @@ def main():
 
     # options
     myparse.add_argument('-t','--threads', type=int,  help="number of threads to use [1]", default=1)
-    myparse.add_argument('-r','--reference', help="viral reference genome in FASTA format,\nto be used in place of default HPV reference",default=0)
+    myparse.add_argument('-r','--reference', help="viral reference genome in FASTA format,\nto be used in place of default HPV reference", default=0)
+    myparse.add_argument('-a','--annotation', help="viral gene annotations in TSV format,\nto be used in place of default HPV annotations\n[{}]".format('$HPV-EMPath/reference/hpv_gene_annot.tsv'), default=installDir+'/reference/hpv_gene_annot.tsv')
     myparse.add_argument('--starviral', help="path to a directory containing STAR-generated\nviral genome indexes based on the above FASTA",default=0)
     myparse.add_argument('-o', '--outname', type=str, help="output file name prefix [./hpvEM]", default='./hpvEM')
     myparse.add_argument('-d', '--disabledust', action='store_true', help="disable filtering of low-complexity reads")
@@ -78,7 +81,6 @@ def main():
     # finding path to reference
     if(args.reference == 0):
         defaultHpvRef = True
-        installDir = os.path.dirname(os.path.abspath(__file__))
         args.reference = installDir+'/reference/combined_pave_hpv.fa'
         args.starviral = installDir+'/reference/combined_pave_hpv_STAR'
     else:
@@ -199,7 +201,7 @@ def main():
             shutil.rmtree('{}.2._STARpass1'.format(args.outname))
 
     print("Creating read table")
-    readsTable = mapReads(hpvBams, defaultHpvRef=defaultHpvRef, hpvRefPath=args.reference, filterLowComplex=not(args.disabledust), outputName=args.outname)
+    readsTable = mapReads(hpvBams, defaultHpvRef=defaultHpvRef, hpvRefPath=args.reference, filterLowComplex=not(args.disabledust), outputName=args.outname, annot=args.annotation)
 
     print("Running EM algorithm")
     EmAlgo(readsTable, allReadsNum, thresholdTpm=args.tpm, outputName=args.outname, printResult=args.printem)
